@@ -26,32 +26,6 @@ import (
 	"github.com/kumina/libvirt_exporter/libvirt_schema"
 )
 
-/*
-#cgo LDFLAGS: -lvirt
-#include <libvirt/libvirt.h>
-#include <libvirt/virterror.h>
-#include <stdlib.h>
-*/
-import "C"
-
-const (
-	VIR_DOMAIN_MEMORY_STAT_SWAP_IN        = C.VIR_DOMAIN_MEMORY_STAT_SWAP_IN
-	VIR_DOMAIN_MEMORY_STAT_SWAP_OUT       = C.VIR_DOMAIN_MEMORY_STAT_SWAP_OUT
-	VIR_DOMAIN_MEMORY_STAT_MAJOR_FAULT    = C.VIR_DOMAIN_MEMORY_STAT_MAJOR_FAULT
-	VIR_DOMAIN_MEMORY_STAT_MINOR_FAULT    = C.VIR_DOMAIN_MEMORY_STAT_MINOR_FAULT
-	VIR_DOMAIN_MEMORY_STAT_UNUSED         = C.VIR_DOMAIN_MEMORY_STAT_UNUSED
-	VIR_DOMAIN_MEMORY_STAT_AVAILABLE      = C.VIR_DOMAIN_MEMORY_STAT_AVAILABLE
-	VIR_DOMAIN_MEMORY_STAT_ACTUAL_BALLOON = C.VIR_DOMAIN_MEMORY_STAT_ACTUAL_BALLOON
-	VIR_DOMAIN_MEMORY_STAT_RSS            = C.VIR_DOMAIN_MEMORY_STAT_RSS
-	VIR_DOMAIN_MEMORY_STAT_NR             = C.VIR_DOMAIN_MEMORY_STAT_NR
-
-	VIR_DOMAIN_CPU_STATS_CPUTIME          = C.VIR_DOMAIN_CPU_STATS_CPUTIME
-	VIR_DOMAIN_CPU_STATS_USERTIME         = C.VIR_DOMAIN_CPU_STATS_USERTIME
-	VIR_DOMAIN_CPU_STATS_SYSTEMTIME       = C.VIR_DOMAIN_CPU_STATS_SYSTEMTIME
-
-	libvirtdAddress = "qemu:///system"
-)
-
 var (
 	libvirtUpDesc = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "", "up"),
@@ -186,17 +160,17 @@ func CollectDomain(ch chan<- prometheus.Metric, domain *libvirt.Domain) error {
 	if err != nil {
 		return err
 	}
-	memstats, err := domain.MemoryStats(VIR_DOMAIN_MEMORY_STAT_NR, 0)
+	memstats, err := domain.MemoryStats(uint32(libvirt.DOMAIN_MEMORY_STAT_NR), 0)
 	if err != nil {
 		return err
 	}
 	var mem_unused uint64 = 0
 	mem_avail := info.MaxMem
 	for _, stat := range memstats {
-		switch stat.Tag {
-		case VIR_DOMAIN_MEMORY_STAT_UNUSED:
+		switch libvirt.DomainMemoryStatTags(stat.Tag) {
+		case libvirt.DOMAIN_MEMORY_STAT_UNUSED:
 			mem_unused = stat.Val
-		case VIR_DOMAIN_MEMORY_STAT_AVAILABLE:
+		case libvirt.DOMAIN_MEMORY_STAT_AVAILABLE:
 			mem_avail = stat.Val
 		}
 	}
